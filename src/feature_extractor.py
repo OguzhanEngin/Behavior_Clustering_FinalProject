@@ -53,19 +53,19 @@ class FeatureExtractor:
                 gad_score_i = self._growth_decline_feature(input_arr=input_i_arr)
                 input_i_trans_arr.append(gad_score_i)
 
-            if (bhv_imp_dict["log"] > 0) or (bhv_imp_dict["ssh"] > 0):
+            if (bhv_imp_dict["log"] > 0):
                 log_score_i = self._logarithmic_feature(
                     input_arr=input_i_arr, freq_col_arr=freq_feature_arr
                 )
                 input_i_trans_arr.append(log_score_i)
 
-            if bhv_imp_dict["exp"] > 0 or (bhv_imp_dict["ssh"] > 0):
+            if bhv_imp_dict["exp"] > 0:
                 exp_score_i = self._positive_exponential_feature(
                     input_arr=input_i_arr, freq_col_arr=freq_feature_arr
                 )
                 input_i_trans_arr.append(exp_score_i)
 
-            if bhv_imp_dict["nexp"] > 0 or (bhv_imp_dict["ssh"] > 0):
+            if bhv_imp_dict["nexp"] > 0:
                 nexp_score_i = self._negative_exponential_feature(
                     input_arr=input_i_arr, freq_col_arr=freq_feature_arr
                 )
@@ -160,21 +160,21 @@ class FeatureExtractor:
     def _drop_uninterested_cols(self, bhv_imp_dict: dict):
         new_col_arr = deepcopy(self.feature_col_arr)
         if bhv_imp_dict["lnr"] == 0:
-            new_col_arr = new_col_arr.remove("Linear")
+            new_col_arr.remove("Linear")
 
         if bhv_imp_dict["osc"] == 0:
-            new_col_arr = new_col_arr.remove("Oscillation")
+            new_col_arr.remove("Oscillation")
 
         if bhv_imp_dict["gad"] == 0:
-            new_col_arr = new_col_arr.remove("Growth_Decline")
+            new_col_arr.remove("Growth_Decline")
 
-        if (bhv_imp_dict["log"] == 0) and (bhv_imp_dict["ssh"] == 0):
-            new_col_arr = new_col_arr.remove("Logarithmic_Growth")
+        if (bhv_imp_dict["log"] == 0):
+            new_col_arr.remove("Logarithmic_Growth")
 
-        if (bhv_imp_dict["exp"] == 0) and (bhv_imp_dict["ssh"] == 0):
-            new_col_arr = new_col_arr.remove("Positive_Exponential_Growth")
+        if (bhv_imp_dict["exp"] == 0):
+            new_col_arr.remove("Positive_Exponential_Growth")
 
-        if (bhv_imp_dict["nexp"] == 0) and (bhv_imp_dict["ssh"] == 0):
-            new_col_arr = new_col_arr.remove("Negative_Exponential_Growth")
+        if (bhv_imp_dict["nexp"] == 0):
+            new_col_arr.remove("Negative_Exponential_Growth")
 
         return new_col_arr

@@ -30,14 +30,21 @@ def file_selector(
         selected_file_arr = filenames
 
     selected_filename = st.selectbox(label=select_label, options=selected_file_arr)
+    if selected_filename is None:
+        st.warning("Select the input data to continue!")
+        st.stop()
     return os.path.join(folder_path, selected_filename)
 
 
-def bhv_imp_slider(behavior_label: str):
-    behavior_importance = st.slider(
-        label=behavior_label, min_value=0, max_value=10, value=1
-    )
-    return behavior_importance
+def image_question(caption: str, question: str, img_path: str):
+    st.image(image=img_path)
+    img_answer = importance_checkbox(label=question, caption=caption)
+    return img_answer
+
+
+def importance_checkbox(label: str, caption: str = ""):
+    bhv_mode_res = st.checkbox(label=label, value=False, key=label + caption)
+    return bhv_mode_res
 
 
 def input_check(input_df: pd.DataFrame):

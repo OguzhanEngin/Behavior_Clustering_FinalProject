@@ -1,10 +1,12 @@
+import os
+
 import pandas as pd
 import streamlit as st
 
 from src.feature_extractor import FeatureExtractor
 from src.clusterer import Clusterer
 from src.reporter import Reporter
-from src.utils import file_selector, bhv_imp_slider, input_check
+from src.utils import file_selector, importance_checkbox, image_question, input_check
 
 
 def main():
@@ -19,7 +21,7 @@ def main():
         not_contains=".",
     )
     if input_data_dir is None:
-        st.warning("Enter the problem directory to continue!")
+        st.warning("Select the problem directory to continue!")
         st.stop()
 
     input_data_path = file_selector(
@@ -29,27 +31,60 @@ def main():
     )
 
     st.header("Behavior Importance Parameters")
-    lnr_importance = bhv_imp_slider(behavior_label=r"$\textsf{\Large Linear}$")
-    osc_importance = bhv_imp_slider(behavior_label=r"$\textsf{\Large Oscillation}$")
-    gad_importance = bhv_imp_slider(
-        behavior_label=r"$\textsf{\Large Growth and Decline}$"
-    )
+    lnr_importance = importance_checkbox(label=r"$\textsf{\Large Evaluate Linearity}$")
+    lnr_importance = int(lnr_importance)
+    osc_importance = importance_checkbox(label=r"$\textsf{\Large Evaluate Cyclicity}$")
+    osc_importance = int(osc_importance)
 
-    exp_importance = bhv_imp_slider(
-        behavior_label=r"$\textsf{\Large Positive Exponential Growth}$"
+    question_img_dir = "Interface_Images"
+    st.subheader("Divergence - Convergence")
+    conv_div_img = os.path.join(question_img_dir, "diverging_converging.png")
+    is_cd_together = image_question(
+        caption="Divergence/Convergence",
+        question=r"$\textsf{\Large Cluster together?}$",
+        img_path=conv_div_img,
     )
-    nex_importance = bhv_imp_slider(
-        behavior_label=r"$\textsf{\Large Negative Exponential Growth}$"
+    if not is_cd_together:
+        cd_importance = 1
+    else:
+        cd_importance = 0
+
+    st.subheader("Monotonicity")
+    monotonicity_img = os.path.join(question_img_dir, "monotonicity.png")
+    is_mntn_together = image_question(
+        caption="Monotonicity",
+        question=r"$\textsf{\Large Cluster together?}$",
+        img_path=monotonicity_img,
     )
-    ssh_importance = bhv_imp_slider(behavior_label=r"$\textsf{\Large S-shape Growth}$")
+    if not is_mntn_together:
+        gad_importance = 1
+    else:
+        gad_importance = 0
+
+    st.subheader("Time Value")
+    value_img = os.path.join(question_img_dir, "value_level.png")
+    is_value_imp = image_question(
+        caption="Time_value",
+        question=r"$\textsf{\Large Cluster together?}$",
+        img_path=value_img,
+    )
+    is_value_imp = ~is_value_imp
+    if is_value_imp:
+        n_sub_clusters = st.number_input(
+            label="Enter the number of sub-clusters: ",
+            value=2,
+            min_value=2,
+            max_value=10,
+            step=1,
+        )
+
     bhv_imp_dict = {
         "lnr": lnr_importance,
         "osc": osc_importance,
         "gad": gad_importance,
-        "log": nex_importance,
-        "exp": exp_importance,
-        "nexp": nex_importance,
-        "ssh": ssh_importance,
+        "log": cd_importance,
+        "exp": cd_importance,
+        "nexp": cd_importance,
     }
 
     st.header("Output Parameters")
@@ -68,12 +103,17 @@ def main():
             input_df=input_df, bhv_imp_dict=bhv_imp_dict
         )
 
-        clusterer = Clusterer()
+        clusterer = Clusterer(n_sub_clusters=n_sub_clusters)
         clusterer.find_n_clusters(bhv_imp_dict)
-        cluster_result_df = clusterer.run_clustering(trans_input_df=trans_input_df)
+        cluster_result_df, subcluster_result_df = clusterer.run_clustering(
+            trans_input_df=trans_input_df, input_df=input_df, consider_val=is_value_imp
+        )
 
         reporting_df = input_df.copy()
         reporting_df["Cluster"] = cluster_result_df["Cluster"]
+        if subcluster_result_df is not None:
+            reporting_df["Sub-cluster"] = subcluster_result_df["Sub-cluster"]
+
         reporter = Reporter()
         reporter.report_results(reporting_df=reporting_df, output_dir=output_dir)
 

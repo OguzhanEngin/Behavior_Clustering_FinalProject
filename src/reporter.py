@@ -20,13 +20,29 @@ class Reporter:
 
         self._calculate_performance(reporting_df=reporting_df)
 
-        self._visuzalize_clusters(reporting_df=reporting_df, plot_out_dir=plot_out_dir)
+        is_sub_cluster = self._visuzalize_clusters(reporting_df=reporting_df, plot_out_dir=plot_out_dir)
+
+        result_out_path = os.path.join(main_out_dir, "cluster_output.csv")
+        report_col_arr = ["Cluster"]
+        if is_sub_cluster:
+            report_col_arr.append("Sub-cluster")
+        if "Label" in reporting_df.columns:
+            report_col_arr.append("Label")
+        reporting_df[report_col_arr].to_csv(result_out_path, index=False)
 
     def _visuzalize_clusters(self, reporting_df: pd.DataFrame, plot_out_dir: str):
-        for cluster in np.sort(reporting_df["Cluster"].unique()):
+        drop_col_arr = ["Label"]
+        if "Sub-cluster" in reporting_df.columns:
+            cluster_col = "Sub-cluster"
+            drop_col_arr.append("Cluster")
+        else:
+            cluster_col = "Cluster"
+        drop_col_arr.append(cluster_col)
+
+        for cluster in np.sort(reporting_df[cluster_col].unique()):
             img_out_path = os.path.join(plot_out_dir, f"cluster_{cluster}.png")
-            cluster_mask = reporting_df["Cluster"] == cluster
-            cluster_df = reporting_df[cluster_mask].drop(["Label", "Cluster"], axis=1)
+            cluster_mask = reporting_df[cluster_col] == cluster
+            cluster_df = reporting_df[cluster_mask].drop(drop_col_arr, axis=1)
 
             _, ax = plt.subplots(figsize=(11, 8))
             ax.set_title(f"Cluster {cluster}")
@@ -37,6 +53,8 @@ class Reporter:
             ax.set_ylabel("Value")
             plt.savefig(img_out_path, dpi=300)
             st.image(img_out_path)
+
+        return cluster_col == "Sub-cluster"
 
     def _calculate_performance(self, reporting_df: pd.DataFrame):
         if "Label" not in reporting_df.columns:
