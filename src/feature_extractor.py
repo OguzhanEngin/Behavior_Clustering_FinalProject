@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 import statsmodels.api as sm
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, detrend
 
 
 class FeatureExtractor:
@@ -33,7 +33,7 @@ class FeatureExtractor:
         trans_input_df = pd.DataFrame(columns=feature_col_arr)
 
         freq_col_arr = input_df.columns
-        freq_col_arr = freq_col_arr[freq_col_arr != "Label"].values
+        freq_col_arr = freq_col_arr[~freq_col_arr.isin(["Label", "Index"])].values
         for i, input_i in input_df.iterrows():
             input_i_trans_arr = []
             input_i_arr = input_i[freq_col_arr].values
@@ -46,7 +46,8 @@ class FeatureExtractor:
                 input_i_trans_arr.append(lnr_score_i)
 
             if bhv_imp_dict["osc"] > 0:
-                osc_score_i = self._oscillation_feature(input_arr=input_i_arr)
+                #osc_score_i = self._oscillation_feature(input_arr=input_i_arr)
+                osc_score_i = self._new_osc_feature(input_arr=input_i_arr)
                 input_i_trans_arr.append(osc_score_i)
 
             if bhv_imp_dict["gad"] > 0:
@@ -101,6 +102,13 @@ class FeatureExtractor:
             acf_valley_max = np.abs(input_acf[acf_valley_idx_arr + 1]).max()
 
         return max(acf_peak_max, acf_valley_max)
+
+    def _new_osc_feature(self, input_arr: np.array):
+        temp_input_arr = detrend(input_arr)
+        peaks, _ = find_peaks(temp_input_arr, prominence=0.01)
+        valleys, _ = find_peaks(-temp_input_arr, prominence=0.01)
+        
+        return max(len(peaks), len(valleys))
 
     def _growth_decline_feature(self, input_arr: np.array):
         input_peak_idx_arr, _ = find_peaks(input_arr)

@@ -36,14 +36,14 @@ def file_selector(
     return os.path.join(folder_path, selected_filename)
 
 
-def image_question(caption: str, question: str, img_path: str):
+def image_question(caption: str, question: str, img_path: str, init_val: bool = False):
     st.image(image=img_path)
-    img_answer = importance_checkbox(label=question, caption=caption)
+    img_answer = importance_checkbox(label=question, caption=caption, init_val=init_val)
     return img_answer
 
 
-def importance_checkbox(label: str, caption: str = ""):
-    bhv_mode_res = st.checkbox(label=label, value=False, key=label + caption)
+def importance_checkbox(label: str, caption: str = "", init_val: bool = False):
+    bhv_mode_res = st.checkbox(label=label, value=init_val, key=label + caption)
     return bhv_mode_res
 
 
@@ -55,12 +55,14 @@ def input_check(input_df: pd.DataFrame):
     input_col_arr = input_df.columns
     if "Label" in input_col_arr:
         input_col_arr = input_col_arr.drop("Label")
+    if "Index" in input_col_arr:
+        input_col_arr = input_col_arr.drop("Index")
 
     try:
         input_col_arr = input_col_arr.astype(float)
     except:
         raise ValueError(
-            "Data contains a column which is not a number!, other than Label column"
+            "Data contains a column which is not a number!, other than Index or Label columns"
         )
 
     assert (

@@ -35,6 +35,12 @@ def main():
     lnr_importance = int(lnr_importance)
     osc_importance = importance_checkbox(label=r"$\textsf{\Large Evaluate Cyclicity}$")
     osc_importance = int(osc_importance)
+    if osc_importance:
+        osc_detail_importance = importance_checkbox(
+            label=r"$\textsf{\Large Detailed Cyclicity Analysis}$"
+        )
+    else:
+        osc_detail_importance = False
 
     question_img_dir = "Interface_Images"
     st.subheader("Divergence - Convergence")
@@ -67,16 +73,19 @@ def main():
         caption="Time_value",
         question=r"$\textsf{\Large Cluster together?}$",
         img_path=value_img,
+        init_val=True,
     )
     is_value_imp = ~is_value_imp
-    if is_value_imp:
-        n_sub_clusters = st.number_input(
-            label="Enter the number of sub-clusters: ",
-            value=2,
-            min_value=2,
-            max_value=10,
-            step=1,
-        )
+    n_sub_clusters = st.number_input(
+        label="Enter the number of sub-clusters: ",
+        value=1,
+        min_value=1,
+        max_value=10,
+        step=1,
+        disabled=~is_value_imp,
+    )
+    if not is_value_imp:
+        n_sub_clusters = 1
 
     bhv_imp_dict = {
         "lnr": lnr_importance,
@@ -106,7 +115,10 @@ def main():
         clusterer = Clusterer(n_sub_clusters=n_sub_clusters)
         clusterer.find_n_clusters(bhv_imp_dict)
         cluster_result_df, subcluster_result_df = clusterer.run_clustering(
-            trans_input_df=trans_input_df, input_df=input_df, consider_val=is_value_imp
+            trans_input_df=trans_input_df,
+            input_df=input_df,
+            consider_val=is_value_imp,
+            osc_detail_importance=osc_detail_importance,
         )
 
         reporting_df = input_df.copy()
@@ -115,7 +127,8 @@ def main():
             reporting_df["Sub-cluster"] = subcluster_result_df["Sub-cluster"]
 
         reporter = Reporter()
-        reporter.report_results(reporting_df=reporting_df, output_dir=output_dir)
+        trans_input_df["Index"] = input_df["Index"]
+        reporter.report_results(reporting_df=reporting_df, trans_input_df=trans_input_df, output_dir=output_dir)
 
 
 if __name__ == "__main__":
